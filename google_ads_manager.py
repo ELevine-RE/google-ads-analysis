@@ -39,15 +39,24 @@ class GoogleAdsManager:
         
     def _build_client(self) -> GoogleAdsClient:
         """Build the Google Ads client."""
-        config = {
-            "developer_token": os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN"),
-            "client_id": os.environ.get("GOOGLE_ADS_CLIENT_ID"),
-            "client_secret": os.environ.get("GOOGLE_ADS_CLIENT_SECRET"),
-            "refresh_token": os.environ.get("GOOGLE_ADS_REFRESH_TOKEN"),
-            "login_customer_id": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID"),
-            "use_proto_plus": True,
-        }
-        client = GoogleAdsClient.load_from_dict(config)
+        # Check if client_secret.json file exists
+        client_secret_file = os.environ.get("GOOGLE_CLIENT_SECRET_FILE", "client_secret.json")
+        
+        if os.path.exists(client_secret_file):
+            # Use file-based authentication
+            client = GoogleAdsClient.load_from_storage(client_secret_file)
+        else:
+            # Use environment variables
+            config = {
+                "developer_token": os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN"),
+                "client_id": os.environ.get("GOOGLE_ADS_CLIENT_ID"),
+                "client_secret": os.environ.get("GOOGLE_ADS_CLIENT_SECRET"),
+                "refresh_token": os.environ.get("GOOGLE_ADS_REFRESH_TOKEN"),
+                "login_customer_id": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID"),
+                "use_proto_plus": True,
+            }
+            client = GoogleAdsClient.load_from_dict(config)
+        
         return client
     
     def _initialize_services(self):
