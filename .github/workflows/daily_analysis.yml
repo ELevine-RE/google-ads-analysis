@@ -36,6 +36,7 @@ jobs:
       - name: Create client_secret.json from secrets
         run: |
           echo '${{ secrets.GOOGLE_CLIENT_SECRET_JSON }}' > client_secret.json
+          python -c "import json; data=json.load(open('client_secret.json')); print('JSON is valid')"
           
       - name: Run daily analysis
         env:
