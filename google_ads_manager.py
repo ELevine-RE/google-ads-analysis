@@ -39,12 +39,12 @@ class GoogleAdsManager:
         
     def _build_client(self) -> GoogleAdsClient:
         """Build the Google Ads client."""
-        # Check if client_secret.json file exists
-        client_secret_file = os.environ.get("GOOGLE_CLIENT_SECRET_FILE", "client_secret.json")
+        # Check if google-ads.yaml file exists
+        config_file = "google-ads.yaml"
         
-        if os.path.exists(client_secret_file):
+        if os.path.exists(config_file):
             # Use file-based authentication
-            client = GoogleAdsClient.load_from_storage(client_secret_file)
+            client = GoogleAdsClient.load_from_storage(config_file)
         else:
             # Use environment variables
             config = {

@@ -33,10 +33,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           
-      - name: Create client_secret.json from secrets
+      - name: Create google-ads.yaml from secrets
         run: |
-          echo '${{ secrets.GOOGLE_CLIENT_SECRET_JSON }}' > client_secret.json
-          python -c "import json; data=json.load(open('client_secret.json')); print('JSON is valid')"
+          cat > google-ads.yaml << EOF
+          developer_token: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN }}
+          client_id: ${{ secrets.GOOGLE_ADS_CLIENT_ID }}
+          client_secret: ${{ secrets.GOOGLE_ADS_CLIENT_SECRET }}
+          refresh_token: ${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
+          login_customer_id: ${{ secrets.GOOGLE_ADS_LOGIN_CUSTOMER_ID }}
+          use_proto_plus: True
+          EOF
+          python -c "import yaml; data=yaml.safe_load(open('google-ads.yaml')); print('YAML config is valid')"
           
       - name: Run daily analysis
         env:
