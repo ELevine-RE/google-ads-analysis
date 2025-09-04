@@ -201,14 +201,19 @@ class MarketingDashboard:
                 total_conversions = np.cumsum(campaign_data["conversions"])
                 total_cost = np.cumsum(campaign_data["cost"])
                 
+                # Calculate averages (scalar values)
+                avg_ctr = total_clicks[-1] / total_impressions[-1] if total_impressions[-1] > 0 else 0
+                avg_cpc = total_cost[-1] / total_clicks[-1] if total_clicks[-1] > 0 else 0
+                avg_cpl = total_cost[-1] / total_conversions[-1] if total_conversions[-1] > 0 else 0
+                
                 cumulative_data = {
                     "total_impressions": total_impressions,
                     "total_clicks": total_clicks,
                     "total_conversions": total_conversions,
                     "total_cost": total_cost,
-                    "avg_ctr": total_clicks[-1] / total_impressions[-1] if total_impressions[-1] > 0 else 0,
-                    "avg_cpc": total_cost[-1] / total_clicks[-1] if total_clicks[-1] > 0 else 0,
-                    "avg_cpl": total_cost[-1] / total_conversions[-1] if total_conversions[-1] > 0 else 0
+                    "avg_ctr": avg_ctr,
+                    "avg_cpc": avg_cpc,
+                    "avg_cpl": avg_cpl
                 }
                 
                 ads_data[campaign_key] = {
@@ -329,15 +334,24 @@ class MarketingDashboard:
             config = campaign_data["config"]
             cumulative = campaign_data["cumulative"]
             
+            # Safely get values with fallbacks
+            total_impressions = cumulative["total_impressions"][-1] if cumulative.get("total_impressions") else 0
+            total_clicks = cumulative["total_clicks"][-1] if cumulative.get("total_clicks") else 0
+            total_conversions = cumulative["total_conversions"][-1] if cumulative.get("total_conversions") else 0
+            total_cost = cumulative["total_cost"][-1] if cumulative.get("total_cost") else 0
+            avg_ctr = cumulative.get("avg_ctr", 0)
+            avg_cpc = cumulative.get("avg_cpc", 0)
+            avg_cpl = cumulative.get("avg_cpl", 0)
+            
             comparison_data.append({
                 "Campaign": config["name"],
-                "Total Impressions": cumulative["total_impressions"][-1],
-                "Total Clicks": cumulative["total_clicks"][-1],
-                "Total Conversions": cumulative["total_conversions"][-1],
-                "Total Cost": cumulative["total_cost"][-1],
-                "CTR": cumulative["avg_ctr"][-1] * 100,
-                "CPC": cumulative["avg_cpc"][-1],
-                "CPL": cumulative["avg_cpl"][-1] if cumulative["total_conversions"][-1] > 0 else 0,
+                "Total Impressions": total_impressions,
+                "Total Clicks": total_clicks,
+                "Total Conversions": total_conversions,
+                "Total Cost": total_cost,
+                "CTR": avg_ctr * 100,
+                "CPC": avg_cpc,
+                "CPL": avg_cpl,
                 "Daily Budget": config["budget_month1"]
             })
         
@@ -350,7 +364,7 @@ class MarketingDashboard:
                 df_comparison[col] = pd.to_numeric(df_comparison[col], errors='coerce').fillna(0)
         
         # Display comparison table
-        st.dataframe(df_comparison, use_container_width=True)
+        st.dataframe(df_comparison, width='stretch')
         
         # Create comparison charts
         col1, col2 = st.columns(2)
@@ -365,7 +379,7 @@ class MarketingDashboard:
                     title="Total Conversions by Campaign",
                     color="Campaign"
                 )
-                st.plotly_chart(fig_conversions, use_container_width=True)
+                st.plotly_chart(fig_conversions, width='stretch')
             else:
                 st.warning("No conversion data available")
         
@@ -379,7 +393,7 @@ class MarketingDashboard:
                     title="Cost Per Lead by Campaign",
                     color="Campaign"
                 )
-                st.plotly_chart(fig_cpl, use_container_width=True)
+                st.plotly_chart(fig_cpl, width='stretch')
             else:
                 st.warning("No CPL data available")
     
@@ -468,7 +482,7 @@ class MarketingDashboard:
                 color="Campaign",
                 title="Daily Conversions Trend"
             )
-            st.plotly_chart(fig_conv_trend, use_container_width=True)
+            st.plotly_chart(fig_conv_trend, width='stretch')
         
         with col2:
             # Cost trend
@@ -479,7 +493,7 @@ class MarketingDashboard:
                 color="Campaign",
                 title="Daily Cost Trend"
             )
-            st.plotly_chart(fig_cost_trend, use_container_width=True)
+            st.plotly_chart(fig_cost_trend, width='stretch')
     
     def render_google_analytics_section(self, ga_data: Dict):
         """Render Google Analytics section."""
@@ -495,7 +509,7 @@ class MarketingDashboard:
                 names=list(traffic_sources.keys()),
                 title="Traffic Sources"
             )
-            st.plotly_chart(fig_traffic, use_container_width=True)
+            st.plotly_chart(fig_traffic, width='stretch')
         
         with col2:
             # Top pages
@@ -506,7 +520,7 @@ class MarketingDashboard:
                 y="views",
                 title="Top Pages by Views"
             )
-            st.plotly_chart(fig_pages, use_container_width=True)
+            st.plotly_chart(fig_pages, width='stretch')
     
     def render_alerts_and_recommendations(self, ads_data: Dict):
         """Render alerts and recommendations."""
