@@ -38,25 +38,24 @@ class GoogleAdsManager:
         self.lqs_engine = LeadQualityEngine()
         
     def _build_client(self) -> GoogleAdsClient:
-        """Build the Google Ads client."""
-        # Check if google-ads.yaml file exists
-        config_file = "google-ads.yaml"
+        """Build the Google Ads client using environment variables."""
+        config = {
+            "developer_token": os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN"),
+            "client_id": os.environ.get("GOOGLE_ADS_CLIENT_ID"),
+            "client_secret": os.environ.get("GOOGLE_ADS_CLIENT_SECRET"),
+            "refresh_token": os.environ.get("GOOGLE_ADS_REFRESH_TOKEN"),
+            "login_customer_id": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID"),
+            "use_proto_plus": True,
+        }
         
-        if os.path.exists(config_file):
-            # Use file-based authentication
-            client = GoogleAdsClient.load_from_storage(config_file)
-        else:
-            # Use environment variables
-            config = {
-                "developer_token": os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN"),
-                "client_id": os.environ.get("GOOGLE_ADS_CLIENT_ID"),
-                "client_secret": os.environ.get("GOOGLE_ADS_CLIENT_SECRET"),
-                "refresh_token": os.environ.get("GOOGLE_ADS_REFRESH_TOKEN"),
-                "login_customer_id": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID"),
-                "use_proto_plus": True,
-            }
-            client = GoogleAdsClient.load_from_dict(config)
+        # Validate required fields
+        required_fields = ["developer_token", "client_id", "client_secret", "refresh_token"]
+        missing_fields = [field for field in required_fields if not config.get(field)]
         
+        if missing_fields:
+            raise ValueError(f"Missing required Google Ads configuration: {missing_fields}")
+        
+        client = GoogleAdsClient.load_from_dict(config)
         return client
     
     def _initialize_services(self):

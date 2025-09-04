@@ -33,17 +33,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           
-      - name: Create google-ads.yaml from secrets
+      - name: Verify environment variables
         run: |
-          cat > google-ads.yaml << EOF
-          developer_token: ${{ secrets.GOOGLE_ADS_DEVELOPER_TOKEN }}
-          client_id: ${{ secrets.GOOGLE_ADS_CLIENT_ID }}
-          client_secret: ${{ secrets.GOOGLE_ADS_CLIENT_SECRET }}
-          refresh_token: ${{ secrets.GOOGLE_ADS_REFRESH_TOKEN }}
-          login_customer_id: ${{ secrets.GOOGLE_ADS_LOGIN_CUSTOMER_ID }}
-          use_proto_plus: True
-          EOF
-          python -c "import yaml; data=yaml.safe_load(open('google-ads.yaml')); print('YAML config is valid')"
+          echo "Checking required environment variables..."
+          python -c "
+          import os
+          required = ['GOOGLE_ADS_DEVELOPER_TOKEN', 'GOOGLE_ADS_CLIENT_ID', 'GOOGLE_ADS_CLIENT_SECRET', 'GOOGLE_ADS_REFRESH_TOKEN', 'GOOGLE_ADS_LOGIN_CUSTOMER_ID', 'GOOGLE_ADS_CUSTOMER_ID']
+          missing = [var for var in required if not os.environ.get(var)]
+          if missing:
+              print(f'❌ Missing variables: {missing}')
+              exit(1)
+          else:
+              print('✅ All required environment variables are set')
+          "
           
       - name: Run daily analysis
         env:
