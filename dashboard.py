@@ -26,9 +26,15 @@ from typing import Dict, List, Optional, Any
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from google_ads_manager import GoogleAdsManager
-from ads.phase_manager import CampaignPhaseManager
-from ads.guardrails import PerformanceMaxGuardrails
+# Import local modules if available, otherwise use mock data
+try:
+    from google_ads_manager import GoogleAdsManager
+    from ads.phase_manager import CampaignPhaseManager
+    from ads.guardrails import PerformanceMaxGuardrails
+    HAS_LOCAL_MODULES = True
+except ImportError:
+    HAS_LOCAL_MODULES = False
+    print("⚠️  Local modules not available, using mock data")
 
 # Page configuration
 st.set_page_config(
@@ -88,9 +94,14 @@ class MarketingDashboard:
     
     def __init__(self):
         """Initialize the dashboard."""
-        self.manager = GoogleAdsManager()
-        self.phase_manager = CampaignPhaseManager()
-        self.guardrails = PerformanceMaxGuardrails()
+        if HAS_LOCAL_MODULES:
+            self.manager = GoogleAdsManager()
+            self.phase_manager = CampaignPhaseManager()
+            self.guardrails = PerformanceMaxGuardrails()
+        else:
+            self.manager = None
+            self.phase_manager = None
+            self.guardrails = None
         
         # Campaign configurations
         self.campaigns = {
