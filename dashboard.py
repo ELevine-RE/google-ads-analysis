@@ -196,14 +196,19 @@ class MarketingDashboard:
                 }
                 
                 # Calculate cumulative metrics
+                total_impressions = np.cumsum(campaign_data["impressions"])
+                total_clicks = np.cumsum(campaign_data["clicks"])
+                total_conversions = np.cumsum(campaign_data["conversions"])
+                total_cost = np.cumsum(campaign_data["cost"])
+                
                 cumulative_data = {
-                    "total_impressions": np.cumsum(campaign_data["impressions"]),
-                    "total_clicks": np.cumsum(campaign_data["clicks"]),
-                    "total_conversions": np.cumsum(campaign_data["conversions"]),
-                    "total_cost": np.cumsum(campaign_data["cost"]),
-                    "avg_ctr": campaign_data["total_clicks"] / campaign_data["total_impressions"],
-                    "avg_cpc": campaign_data["total_cost"] / campaign_data["total_clicks"],
-                    "avg_cpl": campaign_data["total_cost"] / campaign_data["total_conversions"]
+                    "total_impressions": total_impressions,
+                    "total_clicks": total_clicks,
+                    "total_conversions": total_conversions,
+                    "total_cost": total_cost,
+                    "avg_ctr": total_clicks[-1] / total_impressions[-1] if total_impressions[-1] > 0 else 0,
+                    "avg_cpc": total_cost[-1] / total_clicks[-1] if total_clicks[-1] > 0 else 0,
+                    "avg_cpl": total_cost[-1] / total_conversions[-1] if total_conversions[-1] > 0 else 0
                 }
                 
                 ads_data[campaign_key] = {
@@ -221,18 +226,22 @@ class MarketingDashboard:
     def calculate_goal_progress(self, campaign_data: Dict, campaign_config: Dict) -> Dict:
         """Calculate progress towards campaign goals."""
         try:
-            total_conversions = campaign_data["cumulative"]["total_conversions"][-1]
-            total_cost = campaign_data["cumulative"]["total_cost"][-1]
+            # Safely get cumulative data with fallbacks
+            cumulative = campaign_data.get("cumulative", {})
+            total_conversions = cumulative.get("total_conversions", [0])[-1] if cumulative.get("total_conversions") else 0
+            total_cost = cumulative.get("total_cost", [0])[-1] if cumulative.get("total_cost") else 0
+            
+            # Calculate average CPL safely
             avg_cpl = total_cost / total_conversions if total_conversions > 0 else 0
             
-            goal_conversions = campaign_config["goal_conversions"]
-            goal_cpl = campaign_config["goal_cpl"]
+            goal_conversions = campaign_config.get("goal_conversions", 30)
+            goal_cpl = campaign_config.get("goal_cpl", 150)
             
             conversion_progress = min(100, (total_conversions / goal_conversions) * 100)
             cpl_progress = max(0, min(100, (goal_cpl - avg_cpl) / goal_cpl * 100))
             
             # Phase progression logic
-            current_phase = campaign_config["phase"]
+            current_phase = campaign_config.get("phase", "phase_1")
             phase_progress = 0
             
             if current_phase == "phase_1":
@@ -260,7 +269,12 @@ class MarketingDashboard:
             
         except Exception as e:
             st.error(f"Error calculating goal progress: {e}")
-            return {}
+            # Return default values
+            return {
+                "conversions": {"current": 0, "goal": 30, "progress": 0},
+                "cpl": {"current": 0, "goal": 150, "progress": 0},
+                "phase": {"current": "phase_1", "progress": 0}
+            }
     
     def render_header(self):
         """Render the dashboard header."""
@@ -292,11 +306,17 @@ class MarketingDashboard:
             st.metric("Total Conversions (30d)", f"{total_conversions}")
         
         with col3:
-            total_cost = sum([ads_data[c]["cumulative"]["total_cost"][-1] for c in ads_data])
+            try:
+                total_cost = sum([ads_data[c]["cumulative"]["total_cost"][-1] for c in ads_data if "cumulative" in ads_data[c] and "total_cost" in ads_data[c]["cumulative"]])
+            except (KeyError, IndexError):
+                total_cost = 0
             st.metric("Total Ad Spend (30d)", f"${total_cost:,.2f}")
         
         with col4:
-            avg_cpl = total_cost / total_conversions if total_conversions > 0 else 0
+            try:
+                avg_cpl = total_cost / total_conversions if total_conversions > 0 else 0
+            except (ZeroDivisionError, TypeError):
+                avg_cpl = 0
             st.metric("Average CPL", f"${avg_cpl:.2f}")
     
     def render_campaign_comparison(self, ads_data: Dict):
@@ -323,6 +343,12 @@ class MarketingDashboard:
         
         df_comparison = pd.DataFrame(comparison_data)
         
+        # Ensure numeric columns are properly typed
+        numeric_columns = ["Total Impressions", "Total Clicks", "Total Conversions", "Total Cost", "CTR", "CPC", "CPL", "Daily Budget"]
+        for col in numeric_columns:
+            if col in df_comparison.columns:
+                df_comparison[col] = pd.to_numeric(df_comparison[col], errors='coerce').fillna(0)
+        
         # Display comparison table
         st.dataframe(df_comparison, use_container_width=True)
         
@@ -331,25 +357,31 @@ class MarketingDashboard:
         
         with col1:
             # Conversions comparison
-            fig_conversions = px.bar(
-                df_comparison, 
-                x="Campaign", 
-                y="Total Conversions",
-                title="Total Conversions by Campaign",
-                color="Campaign"
-            )
-            st.plotly_chart(fig_conversions, use_container_width=True)
+            if not df_comparison.empty and "Total Conversions" in df_comparison.columns:
+                fig_conversions = px.bar(
+                    df_comparison, 
+                    x="Campaign", 
+                    y="Total Conversions",
+                    title="Total Conversions by Campaign",
+                    color="Campaign"
+                )
+                st.plotly_chart(fig_conversions, use_container_width=True)
+            else:
+                st.warning("No conversion data available")
         
         with col2:
             # CPL comparison
-            fig_cpl = px.bar(
-                df_comparison, 
-                x="Campaign", 
-                y="CPL",
-                title="Cost Per Lead by Campaign",
-                color="Campaign"
-            )
-            st.plotly_chart(fig_cpl, use_container_width=True)
+            if not df_comparison.empty and "CPL" in df_comparison.columns:
+                fig_cpl = px.bar(
+                    df_comparison, 
+                    x="Campaign", 
+                    y="CPL",
+                    title="Cost Per Lead by Campaign",
+                    color="Campaign"
+                )
+                st.plotly_chart(fig_cpl, use_container_width=True)
+            else:
+                st.warning("No CPL data available")
     
     def render_goal_progress(self, ads_data: Dict):
         """Render goal progress tracking."""
