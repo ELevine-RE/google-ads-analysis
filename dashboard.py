@@ -48,6 +48,16 @@ except ImportError as e:
     logger.warning(f"⚠️ Google Ads integration not available, using mock data. Import error: {e}")
     print("⚠️  Google Ads integration not available, using mock data")
 
+# Import Google Analytics integration if available, otherwise use mock data
+try:
+    from google_analytics_integration import SimpleGoogleAnalyticsManager
+    HAS_GOOGLE_ANALYTICS = True
+    logger.info("✅ Successfully imported Google Analytics integration")
+except ImportError as e:
+    HAS_GOOGLE_ANALYTICS = False
+    logger.warning(f"⚠️ Google Analytics integration not available, using mock data. Import error: {e}")
+    print("⚠️  Google Analytics integration not available, using mock data")
+
 # Import other local modules if available
 try:
     from ads.phase_manager import CampaignPhaseManager
@@ -130,6 +140,18 @@ class MarketingDashboard:
         else:
             self.google_ads_manager = None
             logger.info("⚠️ Google Ads integration not available, using mock data")
+        
+        # Initialize Google Analytics integration
+        if HAS_GOOGLE_ANALYTICS:
+            try:
+                self.google_analytics_manager = SimpleGoogleAnalyticsManager()
+                logger.info("✅ Google Analytics integration initialized")
+            except Exception as e:
+                logger.warning(f"⚠️ Google Analytics integration failed, using mock data: {e}")
+                self.google_analytics_manager = None
+        else:
+            self.google_analytics_manager = None
+            logger.info("⚠️ Google Analytics integration not available, using mock data")
         
         # Initialize other local modules
         if HAS_LOCAL_MODULES:
@@ -244,10 +266,24 @@ class MarketingDashboard:
             }
     
     def load_google_analytics_data(self) -> Dict:
-        """Load Google Analytics data (placeholder for actual API integration)."""
+        """Load Google Analytics data."""
         logger.info("📊 Loading Google Analytics data")
-        # This would integrate with Google Analytics API
-        # For now, return sample data
+        
+        # Try to use real Google Analytics data first
+        if self.google_analytics_manager:
+            try:
+                logger.info("📡 Attempting to fetch real Google Analytics data")
+                real_data = self.google_analytics_manager.get_analytics_data(days=30)
+                if real_data and "error" not in real_data:
+                    logger.info("✅ Successfully loaded real Google Analytics data")
+                    return real_data
+                else:
+                    logger.warning(f"⚠️ Google Analytics API returned error: {real_data.get('error', 'Unknown error')}")
+            except Exception as e:
+                logger.error(f"❌ Error fetching Google Analytics data: {e}")
+        
+        # Fallback to mock data if real data fails
+        logger.info("⚠️ Using mock Google Analytics data")
         
         end_date = date.today()
         start_date = end_date - timedelta(days=30)
@@ -257,6 +293,7 @@ class MarketingDashboard:
         
         ga_data = {
             "website_traffic": {
+                "dates": [d.strftime("%Y-%m-%d") for d in dates],
                 "sessions": np.random.randint(100, 500, len(dates)),
                 "users": np.random.randint(80, 400, len(dates)),
                 "pageviews": np.random.randint(200, 1000, len(dates)),
@@ -264,22 +301,26 @@ class MarketingDashboard:
                 "avg_session_duration": np.random.uniform(60, 300, len(dates))
             },
             "conversions": {
-                "lead_form_submissions": np.random.randint(0, 5, len(dates)),
-                "phone_calls": np.random.randint(0, 3, len(dates)),
-                "email_signups": np.random.randint(0, 8, len(dates))
+                "dates": [d.strftime("%Y-%m-%d") for d in dates],
+                "conversions": np.random.randint(0, 5, len(dates)),
+                "revenue": np.random.uniform(0, 1000, len(dates)),
+                "purchase_revenue": np.random.uniform(0, 800, len(dates))
             },
             "traffic_sources": {
-                "organic": 45,
-                "paid": 35,
-                "direct": 15,
-                "social": 5
+                "Organic Search": {"sessions": 450, "users": 380, "percentage": 45},
+                "Paid Search": {"sessions": 350, "users": 300, "percentage": 35},
+                "Direct": {"sessions": 150, "users": 120, "percentage": 15},
+                "Social": {"sessions": 50, "users": 40, "percentage": 5}
             },
-            "top_pages": [
-                {"page": "/", "views": 1200, "conversions": 15},
-                {"page": "/properties", "views": 800, "conversions": 12},
-                {"page": "/contact", "views": 400, "conversions": 8},
-                {"page": "/about", "views": 300, "conversions": 2}
-            ]
+            "summary": {
+                "total_sessions": sum(np.random.randint(100, 500, len(dates))),
+                "total_users": sum(np.random.randint(80, 400, len(dates))),
+                "total_pageviews": sum(np.random.randint(200, 1000, len(dates))),
+                "avg_bounce_rate": np.random.uniform(0.3, 0.7),
+                "avg_session_duration": np.random.uniform(60, 300),
+                "total_conversions": sum(np.random.randint(0, 5, len(dates))),
+                "total_revenue": sum(np.random.uniform(0, 1000, len(dates)))
+            }
         }
         
         return ga_data
