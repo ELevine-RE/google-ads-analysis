@@ -202,9 +202,12 @@ class MarketingDashboard:
                 total_cost = np.cumsum(campaign_data["cost"])
                 
                 # Calculate averages (scalar values)
-                avg_ctr = total_clicks[-1] / total_impressions[-1] if total_impressions[-1] > 0 else 0
-                avg_cpc = total_cost[-1] / total_clicks[-1] if total_clicks[-1] > 0 else 0
-                avg_cpl = total_cost[-1] / total_conversions[-1] if total_conversions[-1] > 0 else 0
+                def safe_last(data, default=0):
+                    return data[-1] if isinstance(data, list) and len(data) > 0 else default
+                
+                avg_ctr = safe_last(total_clicks) / safe_last(total_impressions) if safe_last(total_impressions) > 0 else 0
+                avg_cpc = safe_last(total_cost) / safe_last(total_clicks) if safe_last(total_clicks) > 0 else 0
+                avg_cpl = safe_last(total_cost) / safe_last(total_conversions) if safe_last(total_conversions) > 0 else 0
                 
                 cumulative_data = {
                     "total_impressions": total_impressions,
@@ -233,8 +236,8 @@ class MarketingDashboard:
         try:
             # Safely get cumulative data with fallbacks
             cumulative = campaign_data.get("cumulative", {})
-            total_conversions = cumulative.get("total_conversions", [0])[-1] if cumulative.get("total_conversions") else 0
-            total_cost = cumulative.get("total_cost", [0])[-1] if cumulative.get("total_cost") else 0
+            total_conversions = safe_get_last(cumulative, "total_conversions", 0)
+            total_cost = safe_get_last(cumulative, "total_cost", 0)
             
             # Calculate average CPL safely
             avg_cpl = total_cost / total_conversions if total_conversions > 0 else 0
@@ -312,7 +315,7 @@ class MarketingDashboard:
         
         with col3:
             try:
-                total_cost = sum([ads_data[c]["cumulative"]["total_cost"][-1] for c in ads_data if "cumulative" in ads_data[c] and "total_cost" in ads_data[c]["cumulative"]])
+                total_cost = sum([safe_get_last(ads_data[c]["cumulative"], "total_cost", 0) for c in ads_data if "cumulative" in ads_data[c] and "total_cost" in ads_data[c]["cumulative"]])
             except (KeyError, IndexError):
                 total_cost = 0
             st.metric("Total Ad Spend (30d)", f"${total_cost:,.2f}")
@@ -541,17 +544,21 @@ class MarketingDashboard:
             cumulative = campaign_data["cumulative"]
             
             # Check for alerts
-            if cumulative["total_conversions"][-1] == 0:
+            total_conversions = safe_get_last(cumulative, "total_conversions", 0)
+            avg_cpl = safe_get_last(cumulative, "avg_cpl", 0)
+            avg_ctr = safe_get_last(cumulative, "avg_ctr", 0)
+            
+            if total_conversions == 0:
                 alerts.append(f"⚠️ {config['name']}: No conversions in 30 days")
             
-            if cumulative["avg_cpl"][-1] > config["goal_cpl"] * 1.5:
-                alerts.append(f"⚠️ {config['name']}: CPL ${cumulative['avg_cpl'][-1]:.2f} exceeds goal by 50%")
+            if avg_cpl > config["goal_cpl"] * 1.5:
+                alerts.append(f"⚠️ {config['name']}: CPL ${avg_cpl:.2f} exceeds goal by 50%")
             
             # Generate recommendations
-            if cumulative["total_conversions"][-1] < 5:
+            if total_conversions < 5:
                 recommendations.append(f"📈 {config['name']}: Consider increasing budget to accelerate learning")
             
-            if cumulative["avg_ctr"][-1] < 0.03:
+            if avg_ctr < 0.03:
                 recommendations.append(f"🎯 {config['name']}: Low CTR - review ad creative and targeting")
         
         col1, col2 = st.columns(2)
