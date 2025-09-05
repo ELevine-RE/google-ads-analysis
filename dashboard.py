@@ -203,7 +203,9 @@ class MarketingDashboard:
                 
                 # Calculate averages (scalar values)
                 def safe_last(data, default=0):
-                    return data[-1] if isinstance(data, list) and len(data) > 0 else default
+                    if isinstance(data, list):
+                        return data[-1] if len(data) > 0 else default
+                    return data if data is not None else default
                 
                 avg_ctr = safe_last(total_clicks) / safe_last(total_impressions) if safe_last(total_impressions) > 0 else 0
                 avg_cpc = safe_last(total_cost) / safe_last(total_clicks) if safe_last(total_clicks) > 0 else 0
@@ -341,8 +343,8 @@ class MarketingDashboard:
             def safe_get_last(data, key, default=0):
                 """Safely get the last element from a list or return the value if it's scalar."""
                 value = data.get(key, default)
-                if isinstance(value, list) and len(value) > 0:
-                    return value[-1]
+                if isinstance(value, list):
+                    return value[-1] if len(value) > 0 else default
                 return value if value is not None else default
             
             total_impressions = safe_get_last(cumulative, "total_impressions", 0)
