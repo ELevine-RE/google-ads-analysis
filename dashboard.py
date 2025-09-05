@@ -275,7 +275,13 @@ class MarketingDashboard:
             
             # Calculate average CPL safely
             avg_cpl = total_cost / total_conversions if total_conversions > 0 else 0
-            avg_cpl = float(avg_cpl)  # Convert to regular Python float
+            # Convert to regular Python float, handling multi-dimensional arrays
+            if hasattr(avg_cpl, 'item') and avg_cpl.size == 1:
+                avg_cpl = avg_cpl.item()  # For NumPy scalars
+            elif hasattr(avg_cpl, 'sum'):
+                avg_cpl = float(avg_cpl.sum())  # For multi-element arrays
+            else:
+                avg_cpl = float(avg_cpl)  # For regular numbers
             
             goal_conversions = campaign_config.get("goal_conversions", 30)
             goal_cpl = campaign_config.get("goal_cpl", 150)
@@ -353,16 +359,28 @@ class MarketingDashboard:
         with col3:
             try:
                 total_cost = sum([self.safe_get_last(ads_data[c]["cumulative"], "total_cost", 0) for c in ads_data if "cumulative" in ads_data[c] and "total_cost" in ads_data[c]["cumulative"]])
-                total_cost = float(total_cost)  # Convert to regular Python float
-            except (KeyError, IndexError):
+                # Convert to regular Python float, handling multi-dimensional arrays
+                if hasattr(total_cost, 'item') and total_cost.size == 1:
+                    total_cost = total_cost.item()  # For NumPy scalars
+                elif hasattr(total_cost, 'sum'):
+                    total_cost = float(total_cost.sum())  # For multi-element arrays
+                else:
+                    total_cost = float(total_cost)  # For regular numbers
+            except (KeyError, IndexError, ValueError, TypeError):
                 total_cost = 0
             st.metric("Total Ad Spend (30d)", f"${total_cost:,.2f}")
         
         with col4:
             try:
                 avg_cpl = total_cost / total_conversions if total_conversions > 0 else 0
-                avg_cpl = float(avg_cpl)  # Convert to regular Python float
-            except (ZeroDivisionError, TypeError):
+                # Convert to regular Python float, handling multi-dimensional arrays
+                if hasattr(avg_cpl, 'item') and avg_cpl.size == 1:
+                    avg_cpl = avg_cpl.item()  # For NumPy scalars
+                elif hasattr(avg_cpl, 'sum'):
+                    avg_cpl = float(avg_cpl.sum())  # For multi-element arrays
+                else:
+                    avg_cpl = float(avg_cpl)  # For regular numbers
+            except (ZeroDivisionError, TypeError, ValueError):
                 avg_cpl = 0
             st.metric("Average CPL", f"${avg_cpl:.2f}")
     
@@ -584,8 +602,22 @@ class MarketingDashboard:
             
             # Check for alerts
             total_conversions = self.safe_get_last(cumulative, "total_conversions", 0)
+            # Convert to regular Python number, handling multi-dimensional arrays
+            if hasattr(total_conversions, 'item') and total_conversions.size == 1:
+                total_conversions = total_conversions.item()  # For NumPy scalars
+            elif hasattr(total_conversions, 'sum'):
+                total_conversions = float(total_conversions.sum())  # For multi-element arrays
+            else:
+                total_conversions = float(total_conversions)  # For regular numbers
+            
             avg_cpl = self.safe_get_last(cumulative, "avg_cpl", 0)
-            avg_cpl = float(avg_cpl)  # Convert to regular Python float
+            # Convert to regular Python float, handling multi-dimensional arrays
+            if hasattr(avg_cpl, 'item') and avg_cpl.size == 1:
+                avg_cpl = avg_cpl.item()  # For NumPy scalars
+            elif hasattr(avg_cpl, 'sum'):
+                avg_cpl = float(avg_cpl.sum())  # For multi-element arrays
+            else:
+                avg_cpl = float(avg_cpl)  # For regular numbers
             avg_ctr = self.safe_get_last(cumulative, "avg_ctr", 0)
             
             if total_conversions == 0:
