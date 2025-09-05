@@ -36,8 +36,40 @@ class SimpleGoogleAnalyticsManager:
         if not self.property_id:
             raise ValueError("Google Analytics Property ID is required")
             
+        # Set up credentials
+        self._setup_credentials()
+        
         # Initialize the client
         self.client = BetaAnalyticsDataClient()
+    
+    def _setup_credentials(self):
+        """Set up Google Analytics credentials."""
+        # Try JSON string first (for Streamlit Cloud)
+        credentials_json = os.environ.get("GOOGLE_ANALYTICS_CREDENTIALS_JSON")
+        if credentials_json:
+            try:
+                import json
+                import tempfile
+                
+                # Parse JSON and write to temporary file
+                creds_data = json.loads(credentials_json)
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                    json.dump(creds_data, f)
+                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = f.name
+                logger.info("✅ Using JSON credentials from environment")
+                return
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to parse JSON credentials: {e}")
+        
+        # Try file path (for local development)
+        credentials_file = os.environ.get("GOOGLE_ANALYTICS_CREDENTIALS_FILE")
+        if credentials_file and os.path.exists(credentials_file):
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_file
+            logger.info("✅ Using credentials file")
+            return
+        
+        # No credentials found
+        logger.warning("⚠️ No Google Analytics credentials found")
         
     def get_website_traffic_data(self, days: int = 30) -> Dict:
         """Fetch website traffic data from Google Analytics."""
