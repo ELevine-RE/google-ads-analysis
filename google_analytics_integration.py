@@ -39,8 +39,11 @@ class SimpleGoogleAnalyticsManager:
         # Set up credentials
         self._setup_credentials()
         
-        # Initialize the client
-        self.client = BetaAnalyticsDataClient()
+        # Initialize the client with explicit credentials
+        if hasattr(self, '_credentials') and self._credentials:
+            self.client = BetaAnalyticsDataClient(credentials=self._credentials)
+        else:
+            self.client = BetaAnalyticsDataClient()
     
     def _setup_credentials(self):
         """Set up Google Analytics credentials."""
@@ -50,12 +53,25 @@ class SimpleGoogleAnalyticsManager:
             try:
                 import json
                 import tempfile
+                from google.oauth2 import service_account
                 
-                # Parse JSON and write to temporary file
+                # Parse JSON and create credentials object
                 creds_data = json.loads(credentials_json)
+                
+                # Create temporary file for credentials
                 with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
                     json.dump(creds_data, f)
-                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = f.name
+                    temp_file = f.name
+                
+                # Set environment variable
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_file
+                
+                # Store credentials for direct use
+                self._credentials = service_account.Credentials.from_service_account_file(
+                    temp_file,
+                    scopes=['https://www.googleapis.com/auth/analytics.readonly']
+                )
+                
                 logger.info("✅ Using JSON credentials from environment")
                 return
             except Exception as e:
@@ -64,12 +80,22 @@ class SimpleGoogleAnalyticsManager:
         # Try file path (for local development)
         credentials_file = os.environ.get("GOOGLE_ANALYTICS_CREDENTIALS_FILE")
         if credentials_file and os.path.exists(credentials_file):
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_file
-            logger.info("✅ Using credentials file")
-            return
+            try:
+                from google.oauth2 import service_account
+                
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_file
+                self._credentials = service_account.Credentials.from_service_account_file(
+                    credentials_file,
+                    scopes=['https://www.googleapis.com/auth/analytics.readonly']
+                )
+                logger.info("✅ Using credentials file")
+                return
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to load credentials file: {e}")
         
         # No credentials found
         logger.warning("⚠️ No Google Analytics credentials found")
+        self._credentials = None
         
     def get_website_traffic_data(self, days: int = 30) -> Dict:
         """Fetch website traffic data from Google Analytics."""
