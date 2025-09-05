@@ -58,6 +58,16 @@ except ImportError as e:
     logger.warning(f"⚠️ Google Analytics integration not available, using mock data. Import error: {e}")
     print("⚠️  Google Analytics integration not available, using mock data")
 
+# Import Sierra Interactive integration if available, otherwise use mock data
+try:
+    from sierra_integration import SimpleSierraManager
+    HAS_SIERRA = True
+    logger.info("✅ Successfully imported Sierra Interactive integration")
+except ImportError as e:
+    HAS_SIERRA = False
+    logger.warning(f"⚠️ Sierra Interactive integration not available, using mock data. Import error: {e}")
+    print("⚠️  Sierra Interactive integration not available, using mock data")
+
 # Import other local modules if available
 try:
     from ads.phase_manager import CampaignPhaseManager
@@ -152,6 +162,18 @@ class MarketingDashboard:
         else:
             self.google_analytics_manager = None
             logger.info("⚠️ Google Analytics integration not available, using mock data")
+        
+        # Initialize Sierra Interactive integration
+        if HAS_SIERRA:
+            try:
+                self.sierra_manager = SimpleSierraManager()
+                logger.info("✅ Sierra Interactive integration initialized")
+            except Exception as e:
+                logger.warning(f"⚠️ Sierra Interactive integration failed, using mock data: {e}")
+                self.sierra_manager = None
+        else:
+            self.sierra_manager = None
+            logger.info("⚠️ Sierra Interactive integration not available, using mock data")
         
         # Initialize other local modules
         if HAS_LOCAL_MODULES:
@@ -350,6 +372,89 @@ class MarketingDashboard:
         # No Google Ads manager available
         logger.error("❌ Google Ads integration not available")
         return {"error": "Google Ads integration not configured"}
+    
+    def load_sierra_data(self) -> Dict:
+        """Load Sierra Interactive CRM data."""
+        logger.info("📋 Loading Sierra Interactive data")
+        
+        # Try to use real Sierra Interactive data first
+        if self.sierra_manager:
+            try:
+                logger.info("📡 Attempting to fetch real Sierra Interactive data")
+                real_data = self.sierra_manager.get_comprehensive_data(days=30)
+                if real_data and "error" not in real_data:
+                    logger.info("✅ Successfully loaded real Sierra Interactive data")
+                    return real_data
+                else:
+                    logger.warning(f"⚠️ Sierra Interactive API returned error: {real_data.get('error', 'No valid credentials available')}")
+            except Exception as e:
+                logger.error(f"❌ Error fetching Sierra Interactive data: {e}")
+        
+        # Fallback to mock data if real data fails
+        logger.info("⚠️ Using mock Sierra Interactive data")
+        return self.generate_mock_sierra_data()
+    
+    def generate_mock_sierra_data(self) -> Dict:
+        """Generate mock Sierra Interactive data for testing."""
+        logger.info("🎭 Generating mock Sierra Interactive data")
+        
+        # Generate mock data structure
+        sierra_data = {
+            "leads": {
+                "total_records": 45,
+                "records_by_status": {
+                    "Active": 25,
+                    "New": 12,
+                    "Qualify": 5,
+                    "Closed": 3
+                },
+                "records_by_source": {
+                    "Website": 20,
+                    "Google Ads": 15,
+                    "Referral": 7,
+                    "Direct": 3
+                },
+                "recent_records": [
+                    {"id": 1, "name": "John Smith", "email": "john@example.com", "status": "Active", "source": "Website"},
+                    {"id": 2, "name": "Jane Doe", "email": "jane@example.com", "status": "New", "source": "Google Ads"}
+                ],
+                "summary": {
+                    "total_records": 45,
+                    "active_records": 25,
+                    "new_records": 12,
+                    "converted_records": 3
+                }
+            },
+            "users": {
+                "total_users": 5,
+                "users_by_role": {
+                    "Agent": 3,
+                    "Manager": 1,
+                    "Primary Manager": 1
+                },
+                "users_by_status": {
+                    "Active": 5
+                },
+                "active_users": [
+                    {"id": 13772, "name": "Evan Levine", "email": "Evan@Levine.RealEstate", "role": "Primary Manager", "phone": "(435) 224-5242"}
+                ],
+                "summary": {
+                    "total_users": 5,
+                    "active_users": 5,
+                    "agents": 3,
+                    "managers": 2
+                }
+            },
+            "summary": {
+                "total_records": 45,
+                "active_records": 25,
+                "total_users": 5,
+                "active_users": 5,
+                "conversion_rate": 6.7
+            }
+        }
+        
+        return sierra_data
     def render_header(self):
         """Render the dashboard header."""
         logger.info("🎨 Rendering dashboard header")
@@ -638,6 +743,62 @@ class MarketingDashboard:
             )
             st.plotly_chart(fig_pages, width='stretch')
     
+    def render_sierra_interactive_section(self, sierra_data: Dict):
+        """Render Sierra Interactive CRM section."""
+        st.subheader("📋 Sierra Interactive CRM")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Leads by status
+            leads_by_status = sierra_data["leads"]["records_by_status"]
+            fig_leads_status = px.pie(
+                values=list(leads_by_status.values()),
+                names=list(leads_by_status.keys()),
+                title="Leads by Status"
+            )
+            st.plotly_chart(fig_leads_status, width='stretch')
+            
+            # Recent leads table
+            st.subheader("Recent Leads")
+            recent_leads = sierra_data["leads"]["recent_records"]
+            if recent_leads:
+                leads_df = pd.DataFrame(recent_leads)
+                st.dataframe(leads_df, use_container_width=True)
+            else:
+                st.info("No recent leads data available")
+        
+        with col2:
+            # Leads by source
+            leads_by_source = sierra_data["leads"]["records_by_source"]
+            fig_leads_source = px.bar(
+                x=list(leads_by_source.keys()),
+                y=list(leads_by_source.values()),
+                title="Leads by Source"
+            )
+            st.plotly_chart(fig_leads_source, width='stretch')
+            
+            # Users summary
+            st.subheader("Team Summary")
+            users_summary = sierra_data["users"]["summary"]
+            st.metric("Total Users", users_summary["total_users"])
+            st.metric("Active Users", users_summary["active_users"])
+            st.metric("Agents", users_summary["agents"])
+            st.metric("Managers", users_summary["managers"])
+        
+        # Overall CRM metrics
+        st.subheader("CRM Overview")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Total Leads", sierra_data["summary"]["total_records"])
+        with col2:
+            st.metric("Active Leads", sierra_data["summary"]["active_records"])
+        with col3:
+            st.metric("Conversion Rate", f"{sierra_data['summary']['conversion_rate']:.1f}%")
+        with col4:
+            st.metric("Team Size", sierra_data["summary"]["total_users"])
+    
     def render_alerts_and_recommendations(self, ads_data: Dict):
         """Render alerts and recommendations."""
         st.subheader("🚨 Alerts & Recommendations")
@@ -708,6 +869,7 @@ class MarketingDashboard:
             logger.info("📊 Loading data sources...")
             ga_data = self.load_google_analytics_data()
             ads_data = self.load_google_ads_data()
+            sierra_data = self.load_sierra_data()
             logger.info("✅ Data loaded successfully")
             
             # Render dashboard sections
@@ -726,6 +888,7 @@ class MarketingDashboard:
             self.render_goal_progress(ads_data)
             self.render_trend_analysis(ads_data)
             self.render_google_analytics_section(ga_data)
+            self.render_sierra_interactive_section(sierra_data)
             self.render_alerts_and_recommendations(ads_data)
             logger.info("✅ Dashboard rendering completed successfully")
         except Exception as e:
