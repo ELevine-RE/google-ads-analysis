@@ -487,25 +487,31 @@ class MarketingDashboard:
         
         with col1:
             # Conversions trend
-            fig_conv_trend = px.line(
-                df_trends,
-                x="Date",
-                y="Conversions",
-                color="Campaign",
-                title="Daily Conversions Trend"
-            )
-            st.plotly_chart(fig_conv_trend, width='stretch')
+            if not df_trends.empty:
+                fig_conv_trend = px.line(
+                    df_trends,
+                    x="Date",
+                    y="Conversions",
+                    color="Campaign",
+                    title="Daily Conversions Trend"
+                )
+                st.plotly_chart(fig_conv_trend, width='stretch')
+            else:
+                st.info("No trend data available")
         
         with col2:
             # Cost trend
-            fig_cost_trend = px.line(
-                df_trends,
-                x="Date",
-                y="Cost",
-                color="Campaign",
-                title="Daily Cost Trend"
-            )
-            st.plotly_chart(fig_cost_trend, width='stretch')
+            if not df_trends.empty:
+                fig_cost_trend = px.line(
+                    df_trends,
+                    x="Date",
+                    y="Cost",
+                    color="Campaign",
+                    title="Daily Cost Trend"
+                )
+                st.plotly_chart(fig_cost_trend, width='stretch')
+            else:
+                st.info("No cost trend data available")
     
     def render_google_analytics_section(self, ga_data: Dict):
         """Render Google Analytics section."""

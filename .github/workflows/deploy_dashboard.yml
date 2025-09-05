@@ -127,5 +127,3 @@ jobs:
     - name: Push deployment files
       run: |
         git push origin main
-      permissions:
-        contents: write
