@@ -69,10 +69,9 @@ class SimpleGoogleAdsManager:
                     metrics.cost_micros,
                     metrics.conversions,
                     metrics.average_cpc,
-                    metrics.conversions_by_conversion_action,
                     segments.date
                 FROM campaign
-                WHERE segments.date >= '{self._get_start_date(days)}'
+                WHERE segments.date BETWEEN '{self._get_start_date(days)}' AND '{self._get_end_date()}'
                 AND campaign.status = 'ENABLED'
             """
             
@@ -140,6 +139,11 @@ class SimpleGoogleAdsManager:
         """Get start date string for the query."""
         start_date = date.today() - timedelta(days=days)
         return start_date.strftime("%Y-%m-%d")
+    
+    def _get_end_date(self) -> str:
+        """Get end date string for the query."""
+        end_date = date.today()
+        return end_date.strftime("%Y-%m-%d")
     
     def _calculate_cumulative_metrics(self, daily_data: Dict) -> Dict:
         """Calculate cumulative metrics from daily data."""

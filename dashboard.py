@@ -174,6 +174,75 @@ class MarketingDashboard:
             return value[-1] if len(value) > 0 else default
         return value if value is not None else default
     
+    def calculate_goal_progress(self, campaign_data: Dict, campaign_config: Dict) -> Dict:
+        """Calculate progress towards campaign goals."""
+        try:
+            # Safely get cumulative data with fallbacks
+            cumulative = campaign_data.get("cumulative", {})
+            
+            # Convert to regular Python numbers, handling multi-dimensional arrays
+            def safe_convert(value):
+                if hasattr(value, 'item') and value.size == 1:
+                    return value.item()  # For NumPy scalars
+                elif hasattr(value, 'sum'):
+                    return float(value.sum())  # For multi-element arrays
+                else:
+                    return float(value)  # For regular numbers
+            
+            total_conversions = safe_convert(cumulative.get("total_conversions", 0))
+            total_cost = safe_convert(cumulative.get("total_cost", 0))
+            
+            # Calculate goal progress (simplified for real data)
+            monthly_goal = campaign_config.get("monthly_goal", 50)  # Default goal
+            progress_percentage = min((total_conversions / monthly_goal) * 100, 100) if monthly_goal > 0 else 0
+            
+            cost_per_conversion = total_cost / total_conversions if total_conversions > 0 else 0
+            cpl_goal = campaign_config.get("cpl_goal", 100)  # Default CPL goal
+            cpl_progress = max(0, min(100, (cpl_goal - cost_per_conversion) / cpl_goal * 100)) if cpl_goal > 0 else 0
+            
+            return {
+                "conversions": {
+                    "current": total_conversions,
+                    "goal": monthly_goal,
+                    "progress": progress_percentage
+                },
+                "cpl": {
+                    "current": cost_per_conversion,
+                    "goal": cpl_goal,
+                    "progress": cpl_progress
+                },
+                "phase": {
+                    "current": campaign_config.get("phase", "growth"),
+                    "progress": progress_percentage  # Use conversion progress as phase progress
+                },
+                "cost": {
+                    "total": total_cost,
+                    "per_conversion": cost_per_conversion
+                }
+            }
+        except Exception as e:
+            logger.error(f"Error calculating goal progress: {e}")
+            return {
+                "conversions": {
+                    "current": 0,
+                    "goal": 50,
+                    "progress": 0
+                },
+                "cpl": {
+                    "current": 0,
+                    "goal": 100,
+                    "progress": 0
+                },
+                "phase": {
+                    "current": "growth",
+                    "progress": 0
+                },
+                "cost": {
+                    "total": 0,
+                    "per_conversion": 0
+                }
+            }
+    
     def load_google_analytics_data(self) -> Dict:
         """Load Google Analytics data (placeholder for actual API integration)."""
         logger.info("📊 Loading Google Analytics data")
@@ -325,7 +394,7 @@ class MarketingDashboard:
                 "CTR": avg_ctr * 100,
                 "CPC": avg_cpc,
                 "CPL": avg_cpl,
-                "Daily Budget": config["budget_month1"]
+                "Daily Budget": config.get("budget_month1", 0)
             })
         
         df_comparison = pd.DataFrame(comparison_data)
@@ -429,17 +498,35 @@ class MarketingDashboard:
             daily_data = campaign_data["daily"]
             
             for i, date_val in enumerate(dates):
-                trend_data.append({
-                    "Date": date_val,
-                    "Campaign": config["name"],
-                    "Impressions": daily_data["impressions"][i],
-                    "Clicks": daily_data["clicks"][i],
-                    "Conversions": daily_data["conversions"][i],
-                    "Cost": daily_data["cost"][i],
-                    "CTR": daily_data["ctr"][i] * 100,
-                    "CPC": daily_data["cpc"][i],
-                    "CPL": daily_data["cpl"][i]
-                })
+                date_str = date_val.strftime("%Y-%m-%d")
+                
+                # Get data for this specific date, or use zeros if no data
+                if date_str in daily_data:
+                    day_data = daily_data[date_str]
+                    trend_data.append({
+                        "Date": date_val,
+                        "Campaign": config["name"],
+                        "Impressions": day_data.get("impressions", 0),
+                        "Clicks": day_data.get("clicks", 0),
+                        "Conversions": day_data.get("conversions", 0),
+                        "Cost": day_data.get("cost", 0),
+                        "CTR": day_data.get("ctr", 0) * 100,
+                        "CPC": day_data.get("cpc", 0),
+                        "CPL": day_data.get("cpl", 0)
+                    })
+                else:
+                    # No data for this date, use zeros
+                    trend_data.append({
+                        "Date": date_val,
+                        "Campaign": config["name"],
+                        "Impressions": 0,
+                        "Clicks": 0,
+                        "Conversions": 0,
+                        "Cost": 0,
+                        "CTR": 0,
+                        "CPC": 0,
+                        "CPL": 0
+                    })
         
         df_trends = pd.DataFrame(trend_data)
         
