@@ -129,6 +129,13 @@ class MarketingDashboard:
         if 'last_refresh' not in st.session_state:
             st.session_state.last_refresh = datetime.now()
     
+    def self.safe_get_last(self, data, key, default=0):
+        """Safely get the last element from a list or return the value if it's scalar."""
+        value = data.get(key, default)
+        if isinstance(value, list):
+            return value[-1] if len(value) > 0 else default
+        return value if value is not None else default
+    
     def load_google_analytics_data(self) -> Dict:
         """Load Google Analytics data (placeholder for actual API integration)."""
         # This would integrate with Google Analytics API
@@ -244,8 +251,8 @@ class MarketingDashboard:
         try:
             # Safely get cumulative data with fallbacks
             cumulative = campaign_data.get("cumulative", {})
-            total_conversions = safe_get_last(cumulative, "total_conversions", 0)
-            total_cost = safe_get_last(cumulative, "total_cost", 0)
+            total_conversions = self.safe_get_last(cumulative, "total_conversions", 0)
+            total_cost = self.safe_get_last(cumulative, "total_cost", 0)
             
             # Calculate average CPL safely
             avg_cpl = total_cost / total_conversions if total_conversions > 0 else 0
@@ -323,7 +330,7 @@ class MarketingDashboard:
         
         with col3:
             try:
-                total_cost = sum([safe_get_last(ads_data[c]["cumulative"], "total_cost", 0) for c in ads_data if "cumulative" in ads_data[c] and "total_cost" in ads_data[c]["cumulative"]])
+                total_cost = sum([self.safe_get_last(ads_data[c]["cumulative"], "total_cost", 0) for c in ads_data if "cumulative" in ads_data[c] and "total_cost" in ads_data[c]["cumulative"]])
             except (KeyError, IndexError):
                 total_cost = 0
             st.metric("Total Ad Spend (30d)", f"${total_cost:,.2f}")
@@ -346,20 +353,14 @@ class MarketingDashboard:
             cumulative = campaign_data["cumulative"]
             
             # Safely get values with fallbacks
-            def safe_get_last(data, key, default=0):
-                """Safely get the last element from a list or return the value if it's scalar."""
-                value = data.get(key, default)
-                if isinstance(value, list):
-                    return value[-1] if len(value) > 0 else default
-                return value if value is not None else default
             
-            total_impressions = safe_get_last(cumulative, "total_impressions", 0)
-            total_clicks = safe_get_last(cumulative, "total_clicks", 0)
-            total_conversions = safe_get_last(cumulative, "total_conversions", 0)
-            total_cost = safe_get_last(cumulative, "total_cost", 0)
-            avg_ctr = safe_get_last(cumulative, "avg_ctr", 0)
-            avg_cpc = safe_get_last(cumulative, "avg_cpc", 0)
-            avg_cpl = safe_get_last(cumulative, "avg_cpl", 0)
+            total_impressions = self.safe_get_last(cumulative, "total_impressions", 0)
+            total_clicks = self.safe_get_last(cumulative, "total_clicks", 0)
+            total_conversions = self.safe_get_last(cumulative, "total_conversions", 0)
+            total_cost = self.safe_get_last(cumulative, "total_cost", 0)
+            avg_ctr = self.safe_get_last(cumulative, "avg_ctr", 0)
+            avg_cpc = self.safe_get_last(cumulative, "avg_cpc", 0)
+            avg_cpl = self.safe_get_last(cumulative, "avg_cpl", 0)
             
             comparison_data.append({
                 "Campaign": config["name"],
@@ -558,9 +559,9 @@ class MarketingDashboard:
             cumulative = campaign_data["cumulative"]
             
             # Check for alerts
-            total_conversions = safe_get_last(cumulative, "total_conversions", 0)
-            avg_cpl = safe_get_last(cumulative, "avg_cpl", 0)
-            avg_ctr = safe_get_last(cumulative, "avg_ctr", 0)
+            total_conversions = self.safe_get_last(cumulative, "total_conversions", 0)
+            avg_cpl = self.safe_get_last(cumulative, "avg_cpl", 0)
+            avg_ctr = self.safe_get_last(cumulative, "avg_ctr", 0)
             
             if total_conversions == 0:
                 alerts.append(f"⚠️ {config['name']}: No conversions in 30 days")
