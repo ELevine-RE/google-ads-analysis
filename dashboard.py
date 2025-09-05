@@ -601,6 +601,7 @@ class MarketingDashboard:
 
 def main():
     """Main function to run the dashboard."""
+    # Force redeploy - IndexError fixes applied
     dashboard = MarketingDashboard()
     dashboard.run_dashboard()
 
