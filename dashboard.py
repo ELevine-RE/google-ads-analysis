@@ -79,6 +79,16 @@ except ImportError as e:
     logger.warning(f"⚠️ Local modules not available. Import error: {e}")
     print("⚠️  Local modules not available")
 
+# Import Command Center view
+try:
+    from command_center_view import render_command_center_view
+    HAS_COMMAND_CENTER = True
+    logger.info("✅ Successfully imported Command Center view")
+except ImportError as e:
+    HAS_COMMAND_CENTER = False
+    logger.warning(f"⚠️ Command Center view not available. Import error: {e}")
+    print("⚠️  Command Center view not available")
+
 # Page configuration
 st.set_page_config(
     page_title="Marketing Dashboard - A/B Test",
@@ -91,7 +101,7 @@ st.set_page_config(
 st.sidebar.title("📊 Marketing Dashboard")
 page = st.sidebar.selectbox(
     "Select Page",
-    ["Main Dashboard", "Diagnostics"]
+    ["Main Dashboard", "AI Command Center", "Diagnostics"]
 )
 
 # Custom CSS for better styling
@@ -462,6 +472,19 @@ class MarketingDashboard:
         }
         
         return sierra_data
+    
+    def get_ads_data(self) -> Dict:
+        """Get Google Ads data for external use."""
+        return self.load_google_ads_data()
+    
+    def get_analytics_data(self) -> Dict:
+        """Get Google Analytics data for external use."""
+        return self.load_google_analytics_data()
+    
+    def get_sierra_data(self) -> Dict:
+        """Get Sierra Interactive CRM data for external use."""
+        return self.load_sierra_data()
+    
     def render_header(self):
         """Render the dashboard header."""
         logger.info("🎨 Rendering dashboard header")
@@ -1089,6 +1112,17 @@ def main():
         # Route to appropriate page
         if page == "Main Dashboard":
             dashboard.run_dashboard()
+        elif page == "AI Command Center":
+            if HAS_COMMAND_CENTER:
+                # Get data from the dashboard's data sources
+                ads_data = dashboard.get_ads_data()
+                analytics_data = dashboard.get_analytics_data()
+                crm_data = dashboard.get_sierra_data()
+                
+                # Render the command center view
+                render_command_center_view(ads_data, analytics_data, crm_data)
+            else:
+                st.error("Command Center view is not available. Please check the import.")
         elif page == "Diagnostics":
             dashboard.run_diagnostics()
         
