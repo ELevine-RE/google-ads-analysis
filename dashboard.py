@@ -273,6 +273,21 @@ class MarketingDashboard:
             total_conversions = self.safe_get_last(cumulative, "total_conversions", 0)
             total_cost = self.safe_get_last(cumulative, "total_cost", 0)
             
+            # Convert to regular Python numbers, handling multi-dimensional arrays
+            if hasattr(total_conversions, 'item') and total_conversions.size == 1:
+                total_conversions = total_conversions.item()  # For NumPy scalars
+            elif hasattr(total_conversions, 'sum'):
+                total_conversions = float(total_conversions.sum())  # For multi-element arrays
+            else:
+                total_conversions = float(total_conversions)  # For regular numbers
+                
+            if hasattr(total_cost, 'item') and total_cost.size == 1:
+                total_cost = total_cost.item()  # For NumPy scalars
+            elif hasattr(total_cost, 'sum'):
+                total_cost = float(total_cost.sum())  # For multi-element arrays
+            else:
+                total_cost = float(total_cost)  # For regular numbers
+            
             # Calculate average CPL safely
             avg_cpl = total_cost / total_conversions if total_conversions > 0 else 0
             # Convert to regular Python float, handling multi-dimensional arrays
