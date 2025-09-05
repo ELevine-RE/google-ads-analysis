@@ -12,6 +12,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout repository
@@ -125,3 +127,5 @@ jobs:
     - name: Push deployment files
       run: |
         git push origin main
+      permissions:
+        contents: write
