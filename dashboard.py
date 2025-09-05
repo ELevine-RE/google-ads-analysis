@@ -302,6 +302,9 @@ class MarketingDashboard:
             },
             "conversions": {
                 "dates": [d.strftime("%Y-%m-%d") for d in dates],
+                "lead_form_submissions": np.random.randint(0, 3, len(dates)),
+                "phone_calls": np.random.randint(0, 2, len(dates)),
+                "email_signups": np.random.randint(0, 5, len(dates)),
                 "conversions": np.random.randint(0, 5, len(dates)),
                 "revenue": np.random.uniform(0, 1000, len(dates)),
                 "purchase_revenue": np.random.uniform(0, 800, len(dates))
@@ -375,7 +378,13 @@ class MarketingDashboard:
             st.metric("Website Sessions (30d)", f"{total_sessions:,}")
         
         with col2:
-            total_conversions = sum(ga_data["conversions"]["lead_form_submissions"]) + sum(ga_data["conversions"]["phone_calls"])
+            # Handle different conversion data structures
+            if "lead_form_submissions" in ga_data["conversions"]:
+                total_conversions = sum(ga_data["conversions"]["lead_form_submissions"]) + sum(ga_data["conversions"]["phone_calls"])
+            elif "conversions" in ga_data["conversions"]:
+                total_conversions = sum(ga_data["conversions"]["conversions"])
+            else:
+                total_conversions = ga_data["summary"].get("total_conversions", 0)
             st.metric("Total Conversions (30d)", f"{total_conversions}")
         
         with col3:
