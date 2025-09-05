@@ -50,15 +50,9 @@ except ImportError as e:
 
 # Import Google Analytics integration if available, otherwise use mock data
 try:
-    # Check if we're running on Streamlit Cloud first
-    import os
-    if os.environ.get('STREAMLIT_CLOUD'):
-        logger.info("☁️ Running on Streamlit Cloud - skipping Google Analytics import")
-        HAS_GOOGLE_ANALYTICS = False
-    else:
-        from google_analytics_integration import SimpleGoogleAnalyticsManager
-        HAS_GOOGLE_ANALYTICS = True
-        logger.info("✅ Successfully imported Google Analytics integration")
+    from google_analytics_simple import SimpleGoogleAnalyticsManager
+    HAS_GOOGLE_ANALYTICS = True
+    logger.info("✅ Successfully imported Google Analytics integration")
 except ImportError as e:
     HAS_GOOGLE_ANALYTICS = False
     logger.warning(f"⚠️ Google Analytics integration not available, using mock data. Import error: {e}")
