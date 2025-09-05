@@ -87,6 +87,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Sidebar navigation
+st.sidebar.title("📊 Marketing Dashboard")
+page = st.sidebar.selectbox(
+    "Select Page",
+    ["Main Dashboard", "Diagnostics"]
+)
+
 # Custom CSS for better styling
 st.markdown("""
 <style>
@@ -897,13 +904,194 @@ class MarketingDashboard:
         
         # Update refresh time
         st.session_state.last_refresh = datetime.now()
+    
+    def run_diagnostics(self):
+        """Run the diagnostics page."""
+        logger.info("🔍 Starting diagnostics page")
+        try:
+            st.markdown('<h1 class="main-header">🔍 Data Source Diagnostics</h1>', unsafe_allow_html=True)
+            st.markdown("This page shows all data sources, their fields, and sample data for QA purposes.")
+            
+            # Load all data sources
+            logger.info("📊 Loading all data sources for diagnostics...")
+            ga_data = self.load_google_analytics_data()
+            ads_data = self.load_google_ads_data()
+            sierra_data = self.load_sierra_data()
+            
+            # Google Ads Diagnostics
+            self.render_google_ads_diagnostics(ads_data)
+            
+            # Google Analytics Diagnostics
+            self.render_google_analytics_diagnostics(ga_data)
+            
+            # Sierra Interactive Diagnostics
+            self.render_sierra_diagnostics(sierra_data)
+            
+            logger.info("✅ Diagnostics page completed successfully")
+        except Exception as e:
+            logger.error(f"❌ Error in diagnostics page: {e}", exc_info=True)
+            st.error(f"Error loading diagnostics: {e}")
+    
+    def render_google_ads_diagnostics(self, ads_data: Dict):
+        """Render Google Ads diagnostics."""
+        st.subheader("🎯 Google Ads Data Source")
+        
+        if isinstance(ads_data, dict) and "error" in ads_data:
+            st.error(f"❌ **Error**: {ads_data['error']}")
+            return
+        
+        st.success("✅ **Status**: Connected and working")
+        
+        # Show data structure
+        st.markdown("#### 📊 Data Structure")
+        st.json(ads_data)
+        
+        # Show field examples
+        st.markdown("#### 🔍 Field Examples")
+        for campaign_key, campaign_data in ads_data.items():
+            st.markdown(f"**Campaign: {campaign_key}**")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("**Config Fields:**")
+                config = campaign_data.get("config", {})
+                for field, value in config.items():
+                    st.write(f"- `{field}`: `{value}`")
+            
+            with col2:
+                st.markdown("**Cumulative Fields:**")
+                cumulative = campaign_data.get("cumulative", {})
+                for field, value in cumulative.items():
+                    if isinstance(value, (list, np.ndarray)):
+                        st.write(f"- `{field}`: `{type(value).__name__}` (length: {len(value)})")
+                        if len(value) > 0:
+                            st.write(f"  - First value: `{value[0]}`")
+                            st.write(f"  - Last value: `{value[-1]}`")
+                    else:
+                        st.write(f"- `{field}`: `{value}`")
+            
+            st.markdown("---")
+    
+    def render_google_analytics_diagnostics(self, ga_data: Dict):
+        """Render Google Analytics diagnostics."""
+        st.subheader("🌐 Google Analytics Data Source")
+        
+        if isinstance(ga_data, dict) and "error" in ga_data:
+            st.warning(f"⚠️ **Using Mock Data**: {ga_data.get('error', 'No real data available')}")
+        else:
+            st.success("✅ **Status**: Connected and working")
+        
+        # Show data structure
+        st.markdown("#### 📊 Data Structure")
+        st.json(ga_data)
+        
+        # Show field examples
+        st.markdown("#### 🔍 Field Examples")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Website Traffic Fields:**")
+            traffic = ga_data.get("website_traffic", {})
+            for field, value in traffic.items():
+                if isinstance(value, (list, np.ndarray)):
+                    st.write(f"- `{field}`: `{type(value).__name__}` (length: {len(value)})")
+                    if len(value) > 0:
+                        st.write(f"  - First value: `{value[0]}`")
+                        st.write(f"  - Last value: `{value[-1]}`")
+                else:
+                    st.write(f"- `{field}`: `{value}`")
+            
+            st.markdown("**Traffic Sources:**")
+            sources = ga_data.get("traffic_sources", {})
+            for source, data in sources.items():
+                st.write(f"- `{source}`: {data}")
+        
+        with col2:
+            st.markdown("**Conversions Fields:**")
+            conversions = ga_data.get("conversions", {})
+            for field, value in conversions.items():
+                if isinstance(value, (list, np.ndarray)):
+                    st.write(f"- `{field}`: `{type(value).__name__}` (length: {len(value)})")
+                    if len(value) > 0:
+                        st.write(f"  - First value: `{value[0]}`")
+                        st.write(f"  - Last value: `{value[-1]}`")
+                else:
+                    st.write(f"- `{field}`: `{value}`")
+            
+            st.markdown("**Summary Fields:**")
+            summary = ga_data.get("summary", {})
+            for field, value in summary.items():
+                st.write(f"- `{field}`: `{value}`")
+    
+    def render_sierra_diagnostics(self, sierra_data: Dict):
+        """Render Sierra Interactive diagnostics."""
+        st.subheader("📋 Sierra Interactive Data Source")
+        
+        if isinstance(sierra_data, dict) and "error" in sierra_data:
+            st.warning(f"⚠️ **Using Mock Data**: {sierra_data.get('error', 'No real data available')}")
+        else:
+            st.success("✅ **Status**: Connected and working")
+        
+        # Show data structure
+        st.markdown("#### 📊 Data Structure")
+        st.json(sierra_data)
+        
+        # Show field examples
+        st.markdown("#### 🔍 Field Examples")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Leads Data:**")
+            leads = sierra_data.get("leads", {})
+            for field, value in leads.items():
+                if isinstance(value, dict):
+                    st.write(f"- `{field}`: `dict` with {len(value)} items")
+                    for subfield, subvalue in value.items():
+                        if isinstance(subvalue, (list, np.ndarray)):
+                            st.write(f"  - `{subfield}`: `{type(subvalue).__name__}` (length: {len(subvalue)})")
+                            if len(subvalue) > 0 and len(subvalue) <= 3:
+                                st.write(f"    - Values: `{subvalue}`")
+                        else:
+                            st.write(f"  - `{subfield}`: `{subvalue}`")
+                else:
+                    st.write(f"- `{field}`: `{value}`")
+        
+        with col2:
+            st.markdown("**Users Data:**")
+            users = sierra_data.get("users", {})
+            for field, value in users.items():
+                if isinstance(value, dict):
+                    st.write(f"- `{field}`: `dict` with {len(value)} items")
+                    for subfield, subvalue in value.items():
+                        if isinstance(subvalue, (list, np.ndarray)):
+                            st.write(f"  - `{subfield}`: `{type(subvalue).__name__}` (length: {len(subvalue)})")
+                            if len(subvalue) > 0 and len(subvalue) <= 3:
+                                st.write(f"    - Values: `{subvalue}`")
+                        else:
+                            st.write(f"  - `{subfield}`: `{subvalue}`")
+                else:
+                    st.write(f"- `{field}`: `{value}`")
+            
+            st.markdown("**Summary Data:**")
+            summary = sierra_data.get("summary", {})
+            for field, value in summary.items():
+                st.write(f"- `{field}`: `{value}`")
 
 def main():
     """Main function to run the dashboard."""
     logger.info("🎯 Starting Marketing Dashboard application")
     try:
         dashboard = MarketingDashboard()
-        dashboard.run_dashboard()
+        
+        # Route to appropriate page
+        if page == "Main Dashboard":
+            dashboard.run_dashboard()
+        elif page == "Diagnostics":
+            dashboard.run_diagnostics()
+        
         logger.info("✅ Dashboard application completed successfully")
     except Exception as e:
         logger.error(f"❌ Fatal error in main application: {e}", exc_info=True)
