@@ -335,13 +335,20 @@ class MarketingDashboard:
             cumulative = campaign_data["cumulative"]
             
             # Safely get values with fallbacks
-            total_impressions = cumulative["total_impressions"][-1] if cumulative.get("total_impressions") else 0
-            total_clicks = cumulative["total_clicks"][-1] if cumulative.get("total_clicks") else 0
-            total_conversions = cumulative["total_conversions"][-1] if cumulative.get("total_conversions") else 0
-            total_cost = cumulative["total_cost"][-1] if cumulative.get("total_cost") else 0
-            avg_ctr = cumulative.get("avg_ctr", 0)
-            avg_cpc = cumulative.get("avg_cpc", 0)
-            avg_cpl = cumulative.get("avg_cpl", 0)
+            def safe_get_last(data, key, default=0):
+                """Safely get the last element from a list or return the value if it's scalar."""
+                value = data.get(key, default)
+                if isinstance(value, list) and len(value) > 0:
+                    return value[-1]
+                return value if value is not None else default
+            
+            total_impressions = safe_get_last(cumulative, "total_impressions", 0)
+            total_clicks = safe_get_last(cumulative, "total_clicks", 0)
+            total_conversions = safe_get_last(cumulative, "total_conversions", 0)
+            total_cost = safe_get_last(cumulative, "total_cost", 0)
+            avg_ctr = safe_get_last(cumulative, "avg_ctr", 0)
+            avg_cpc = safe_get_last(cumulative, "avg_cpc", 0)
+            avg_cpl = safe_get_last(cumulative, "avg_cpl", 0)
             
             comparison_data.append({
                 "Campaign": config["name"],
