@@ -41,7 +41,21 @@ class SimpleGoogleAnalyticsManager:
         
         # Initialize the client with explicit credentials
         if hasattr(self, '_credentials') and self._credentials:
-            self.client = BetaAnalyticsDataClient(credentials=self._credentials)
+            try:
+                # Create client with explicit credentials and disable default auth
+                from google.auth.transport.requests import Request
+                from google.auth.transport.grpc import AuthMetadataPlugin
+                
+                # Refresh credentials to ensure they're valid
+                self._credentials.refresh(Request())
+                
+                # Create client with explicit credentials
+                self.client = BetaAnalyticsDataClient(credentials=self._credentials)
+                logger.info("✅ Google Analytics client initialized with explicit credentials")
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize client with explicit credentials: {e}")
+                # Fallback to default client
+                self.client = BetaAnalyticsDataClient()
         else:
             self.client = BetaAnalyticsDataClient()
     

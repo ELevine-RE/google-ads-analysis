@@ -144,8 +144,14 @@ class MarketingDashboard:
         # Initialize Google Analytics integration
         if HAS_GOOGLE_ANALYTICS:
             try:
-                self.google_analytics_manager = SimpleGoogleAnalyticsManager()
-                logger.info("✅ Google Analytics integration initialized")
+                # Check if we're running on Streamlit Cloud
+                import os
+                if os.environ.get('STREAMLIT_CLOUD'):
+                    logger.info("☁️ Running on Streamlit Cloud - temporarily disabling Google Analytics")
+                    self.google_analytics_manager = None
+                else:
+                    self.google_analytics_manager = SimpleGoogleAnalyticsManager()
+                    logger.info("✅ Google Analytics integration initialized")
             except Exception as e:
                 logger.warning(f"⚠️ Google Analytics integration failed, using mock data: {e}")
                 self.google_analytics_manager = None
