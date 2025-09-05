@@ -256,6 +256,7 @@ class MarketingDashboard:
             
             # Calculate average CPL safely
             avg_cpl = total_cost / total_conversions if total_conversions > 0 else 0
+            avg_cpl = float(avg_cpl)  # Convert to regular Python float
             
             goal_conversions = campaign_config.get("goal_conversions", 30)
             goal_cpl = campaign_config.get("goal_cpl", 150)
@@ -331,6 +332,7 @@ class MarketingDashboard:
         with col3:
             try:
                 total_cost = sum([self.safe_get_last(ads_data[c]["cumulative"], "total_cost", 0) for c in ads_data if "cumulative" in ads_data[c] and "total_cost" in ads_data[c]["cumulative"]])
+                total_cost = float(total_cost)  # Convert to regular Python float
             except (KeyError, IndexError):
                 total_cost = 0
             st.metric("Total Ad Spend (30d)", f"${total_cost:,.2f}")
@@ -338,6 +340,7 @@ class MarketingDashboard:
         with col4:
             try:
                 avg_cpl = total_cost / total_conversions if total_conversions > 0 else 0
+                avg_cpl = float(avg_cpl)  # Convert to regular Python float
             except (ZeroDivisionError, TypeError):
                 avg_cpl = 0
             st.metric("Average CPL", f"${avg_cpl:.2f}")
@@ -561,6 +564,7 @@ class MarketingDashboard:
             # Check for alerts
             total_conversions = self.safe_get_last(cumulative, "total_conversions", 0)
             avg_cpl = self.safe_get_last(cumulative, "avg_cpl", 0)
+            avg_cpl = float(avg_cpl)  # Convert to regular Python float
             avg_ctr = self.safe_get_last(cumulative, "avg_ctr", 0)
             
             if total_conversions == 0:
