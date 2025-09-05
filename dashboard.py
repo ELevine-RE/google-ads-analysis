@@ -50,9 +50,15 @@ except ImportError as e:
 
 # Import Google Analytics integration if available, otherwise use mock data
 try:
-    from google_analytics_integration import SimpleGoogleAnalyticsManager
-    HAS_GOOGLE_ANALYTICS = True
-    logger.info("✅ Successfully imported Google Analytics integration")
+    # Check if we're running on Streamlit Cloud first
+    import os
+    if os.environ.get('STREAMLIT_CLOUD'):
+        logger.info("☁️ Running on Streamlit Cloud - skipping Google Analytics import")
+        HAS_GOOGLE_ANALYTICS = False
+    else:
+        from google_analytics_integration import SimpleGoogleAnalyticsManager
+        HAS_GOOGLE_ANALYTICS = True
+        logger.info("✅ Successfully imported Google Analytics integration")
 except ImportError as e:
     HAS_GOOGLE_ANALYTICS = False
     logger.warning(f"⚠️ Google Analytics integration not available, using mock data. Import error: {e}")
@@ -144,14 +150,8 @@ class MarketingDashboard:
         # Initialize Google Analytics integration
         if HAS_GOOGLE_ANALYTICS:
             try:
-                # Check if we're running on Streamlit Cloud
-                import os
-                if os.environ.get('STREAMLIT_CLOUD'):
-                    logger.info("☁️ Running on Streamlit Cloud - temporarily disabling Google Analytics")
-                    self.google_analytics_manager = None
-                else:
-                    self.google_analytics_manager = SimpleGoogleAnalyticsManager()
-                    logger.info("✅ Google Analytics integration initialized")
+                self.google_analytics_manager = SimpleGoogleAnalyticsManager()
+                logger.info("✅ Google Analytics integration initialized")
             except Exception as e:
                 logger.warning(f"⚠️ Google Analytics integration failed, using mock data: {e}")
                 self.google_analytics_manager = None
