@@ -48,10 +48,27 @@ class SimpleGoogleAnalyticsManager:
             creds_data = json.loads(credentials_json)
             
             # Create credentials object directly from JSON data
-            self._credentials = service_account.Credentials.from_service_account_info(
-                creds_data,
-                scopes=['https://www.googleapis.com/auth/analytics.readonly']
-            )
+            # Handle potential base64 encoding issues
+            try:
+                self._credentials = service_account.Credentials.from_service_account_info(
+                    creds_data,
+                    scopes=['https://www.googleapis.com/auth/analytics.readonly']
+                )
+            except Exception as e:
+                if "base64" in str(e).lower():
+                    logger.warning("⚠️ Base64 encoding issue detected, trying alternative approach")
+                    # Try creating from file instead
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                        json.dump(creds_data, f)
+                        temp_file = f.name
+                    
+                    self._credentials = service_account.Credentials.from_service_account_file(
+                        temp_file,
+                        scopes=['https://www.googleapis.com/auth/analytics.readonly']
+                    )
+                else:
+                    raise e
             
             # Refresh credentials to ensure they're valid
             self._credentials.refresh(Request())
@@ -219,16 +236,24 @@ class SimpleGoogleAnalyticsManager:
             if "error" in sources_data:
                 return sources_data
             
-            # Create comprehensive data structure
+            # Create comprehensive data structure that matches dashboard expectations
             analytics_data = {
                 "website_traffic": traffic_data,
                 "traffic_sources": sources_data,
+                "conversions": {
+                    "dates": traffic_data["dates"],
+                    "lead_form_submissions": [0] * len(traffic_data["dates"]),  # Placeholder
+                    "phone_calls": [0] * len(traffic_data["dates"]),  # Placeholder
+                    "email_signups": [0] * len(traffic_data["dates"])  # Placeholder
+                },
                 "summary": {
                     "total_sessions": sum(traffic_data["sessions"]),
                     "total_users": sum(traffic_data["users"]),
                     "total_pageviews": sum(traffic_data["pageviews"]),
                     "avg_bounce_rate": np.mean(traffic_data["bounce_rate"]),
-                    "avg_session_duration": np.mean(traffic_data["avg_session_duration"])
+                    "avg_session_duration": np.mean(traffic_data["avg_session_duration"]),
+                    "total_conversions": 0,  # Placeholder
+                    "total_revenue": 0  # Placeholder
                 }
             }
             
