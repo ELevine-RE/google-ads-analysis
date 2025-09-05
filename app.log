@@ -1,0 +1,17 @@
+2025-09-05 11:37:16,993 - __main__ - INFO - ✅ Successfully imported Google Ads integration
+2025-09-05 11:37:17,060 - __main__ - INFO - ✅ Successfully imported local modules
+2025-09-05 11:37:17,143 - __main__ - INFO - 🎯 Starting Marketing Dashboard application
+2025-09-05 11:37:17,143 - __main__ - INFO - 🚀 Initializing MarketingDashboard
+2025-09-05 11:37:17,319 - __main__ - WARNING - ⚠️ Google Ads integration failed, using mock data: ('invalid_client: Unauthorized', {'error': 'invalid_client', 'error_description': 'Unauthorized'})
+2025-09-05 11:37:17,324 - __main__ - INFO - ✅ Initialized with local modules
+2025-09-05 11:37:17,325 - __main__ - INFO - 🚀 Starting dashboard rendering
+2025-09-05 11:37:17,325 - __main__ - INFO - 📊 Loading data sources...
+2025-09-05 11:37:17,325 - __main__ - INFO - 📊 Loading Google Analytics data
+2025-09-05 11:37:17,328 - __main__ - INFO - 🎯 Loading Google Ads data
+2025-09-05 11:37:17,328 - __main__ - INFO - 🎭 Generating mock Google Ads data
+2025-09-05 11:37:17,329 - __main__ - INFO - ✅ Data loaded successfully
+2025-09-05 11:37:17,329 - __main__ - INFO - 🎨 Rendering dashboard sections...
+2025-09-05 11:37:17,329 - __main__ - INFO - 🎨 Rendering dashboard header
+2025-09-05 11:37:17,330 - __main__ - INFO - 📈 Rendering overview metrics
+2025-09-05 11:37:17,805 - __main__ - INFO - ✅ Dashboard rendering completed successfully
+2025-09-05 11:37:17,806 - __main__ - INFO - ✅ Dashboard application completed successfully

@@ -38,17 +38,26 @@ logger = logging.getLogger(__name__)
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Import local modules if available, otherwise use mock data
+# Import Google Ads integration if available, otherwise use mock data
 try:
-    from google_ads_manager import GoogleAdsManager
+    from google_ads_integration import SimpleGoogleAdsManager
+    HAS_GOOGLE_ADS = True
+    logger.info("✅ Successfully imported Google Ads integration")
+except ImportError as e:
+    HAS_GOOGLE_ADS = False
+    logger.warning(f"⚠️ Google Ads integration not available, using mock data. Import error: {e}")
+    print("⚠️  Google Ads integration not available, using mock data")
+
+# Import other local modules if available
+try:
     from ads.phase_manager import CampaignPhaseManager
     from ads.guardrails import PerformanceMaxGuardrails
     HAS_LOCAL_MODULES = True
     logger.info("✅ Successfully imported local modules")
 except ImportError as e:
     HAS_LOCAL_MODULES = False
-    logger.warning(f"⚠️ Local modules not available, using mock data. Import error: {e}")
-    print("⚠️  Local modules not available, using mock data")
+    logger.warning(f"⚠️ Local modules not available. Import error: {e}")
+    print("⚠️  Local modules not available")
 
 # Page configuration
 st.set_page_config(
@@ -109,16 +118,28 @@ class MarketingDashboard:
     def __init__(self):
         """Initialize the dashboard."""
         logger.info("🚀 Initializing MarketingDashboard")
+        
+        # Initialize Google Ads integration
+        if HAS_GOOGLE_ADS:
+            try:
+                self.google_ads_manager = SimpleGoogleAdsManager()
+                logger.info("✅ Google Ads integration initialized")
+            except Exception as e:
+                logger.warning(f"⚠️ Google Ads integration failed, using mock data: {e}")
+                self.google_ads_manager = None
+        else:
+            self.google_ads_manager = None
+            logger.info("⚠️ Google Ads integration not available, using mock data")
+        
+        # Initialize other local modules
         if HAS_LOCAL_MODULES:
-            self.manager = GoogleAdsManager()
             self.phase_manager = CampaignPhaseManager()
             self.guardrails = PerformanceMaxGuardrails()
             logger.info("✅ Initialized with local modules")
         else:
-            self.manager = None
             self.phase_manager = None
             self.guardrails = None
-            logger.info("⚠️ Initialized with mock data (no local modules)")
+            logger.info("⚠️ Local modules not available")
         
         # Campaign configurations
         self.campaigns = {
@@ -197,9 +218,24 @@ class MarketingDashboard:
     def load_google_ads_data(self) -> Dict:
         """Load Google Ads campaign data."""
         logger.info("🎯 Loading Google Ads data")
+        
+        # Try to use real Google Ads data first
+        if self.google_ads_manager:
+            try:
+                logger.info("📡 Attempting to fetch real Google Ads data")
+                real_data = self.google_ads_manager.get_campaign_data(days=30)
+                if real_data:
+                    logger.info(f"✅ Successfully loaded real data for {len(real_data)} campaigns")
+                    return real_data
+                else:
+                    logger.warning("⚠️ No real data returned, falling back to mock data")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to load real Google Ads data: {e}")
+                logger.info("🔄 Falling back to mock data")
+        
+        # Fall back to mock data
         try:
-            # This would use the actual Google Ads API
-            # For now, return sample data
+            logger.info("🎭 Generating mock Google Ads data")
             
             end_date = date.today()
             start_date = end_date - timedelta(days=30)
