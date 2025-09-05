@@ -19,4 +19,7 @@ python-dateutil>=2.8.0
 click>=8.1.0
 schedule>=1.2.0
 
+# Environment variable loading
+python-dotenv>=1.0.0
+
 # Note: Using mock data for Google Analytics to avoid protobuf conflicts
