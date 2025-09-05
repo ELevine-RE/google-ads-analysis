@@ -21,7 +21,19 @@ import numpy as np
 from datetime import datetime, timedelta, date
 import os
 import sys
+import logging
 from typing import Dict, List, Optional, Any
+
+# Configure logging to write to app.log file
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()  # Also log to console
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -32,8 +44,10 @@ try:
     from ads.phase_manager import CampaignPhaseManager
     from ads.guardrails import PerformanceMaxGuardrails
     HAS_LOCAL_MODULES = True
-except ImportError:
+    logger.info("✅ Successfully imported local modules")
+except ImportError as e:
     HAS_LOCAL_MODULES = False
+    logger.warning(f"⚠️ Local modules not available, using mock data. Import error: {e}")
     print("⚠️  Local modules not available, using mock data")
 
 # Page configuration
@@ -94,14 +108,17 @@ class MarketingDashboard:
     
     def __init__(self):
         """Initialize the dashboard."""
+        logger.info("🚀 Initializing MarketingDashboard")
         if HAS_LOCAL_MODULES:
             self.manager = GoogleAdsManager()
             self.phase_manager = CampaignPhaseManager()
             self.guardrails = PerformanceMaxGuardrails()
+            logger.info("✅ Initialized with local modules")
         else:
             self.manager = None
             self.phase_manager = None
             self.guardrails = None
+            logger.info("⚠️ Initialized with mock data (no local modules)")
         
         # Campaign configurations
         self.campaigns = {
@@ -138,6 +155,7 @@ class MarketingDashboard:
     
     def load_google_analytics_data(self) -> Dict:
         """Load Google Analytics data (placeholder for actual API integration)."""
+        logger.info("📊 Loading Google Analytics data")
         # This would integrate with Google Analytics API
         # For now, return sample data
         
@@ -178,6 +196,7 @@ class MarketingDashboard:
     
     def load_google_ads_data(self) -> Dict:
         """Load Google Ads campaign data."""
+        logger.info("🎯 Loading Google Ads data")
         try:
             # This would use the actual Google Ads API
             # For now, return sample data
@@ -302,6 +321,7 @@ class MarketingDashboard:
     
     def render_header(self):
         """Render the dashboard header."""
+        logger.info("🎨 Rendering dashboard header")
         st.markdown('<h1 class="main-header">📊 Marketing Dashboard - A/B Test</h1>', unsafe_allow_html=True)
         
         col1, col2, col3 = st.columns(3)
@@ -317,6 +337,7 @@ class MarketingDashboard:
     
     def render_overview_metrics(self, ga_data: Dict, ads_data: Dict):
         """Render overview metrics."""
+        logger.info("📈 Rendering overview metrics")
         st.subheader("📈 Overview Metrics")
         
         col1, col2, col3, col4 = st.columns(4)
@@ -600,27 +621,41 @@ class MarketingDashboard:
     
     def run_dashboard(self):
         """Run the complete dashboard."""
-        # Load data
-        ga_data = self.load_google_analytics_data()
-        ads_data = self.load_google_ads_data()
-        
-        # Render dashboard sections
-        self.render_header()
-        self.render_overview_metrics(ga_data, ads_data)
-        self.render_campaign_comparison(ads_data)
-        self.render_goal_progress(ads_data)
-        self.render_trend_analysis(ads_data)
-        self.render_google_analytics_section(ga_data)
-        self.render_alerts_and_recommendations(ads_data)
+        logger.info("🚀 Starting dashboard rendering")
+        try:
+            # Load data
+            logger.info("📊 Loading data sources...")
+            ga_data = self.load_google_analytics_data()
+            ads_data = self.load_google_ads_data()
+            logger.info("✅ Data loaded successfully")
+            
+            # Render dashboard sections
+            logger.info("🎨 Rendering dashboard sections...")
+            self.render_header()
+            self.render_overview_metrics(ga_data, ads_data)
+            self.render_campaign_comparison(ads_data)
+            self.render_goal_progress(ads_data)
+            self.render_trend_analysis(ads_data)
+            self.render_google_analytics_section(ga_data)
+            self.render_alerts_and_recommendations(ads_data)
+            logger.info("✅ Dashboard rendering completed successfully")
+        except Exception as e:
+            logger.error(f"❌ Error in dashboard rendering: {e}", exc_info=True)
+            st.error(f"Error loading dashboard: {e}")
         
         # Update refresh time
         st.session_state.last_refresh = datetime.now()
 
 def main():
     """Main function to run the dashboard."""
-    # Force redeploy - IndexError fixes applied
-    dashboard = MarketingDashboard()
-    dashboard.run_dashboard()
+    logger.info("🎯 Starting Marketing Dashboard application")
+    try:
+        dashboard = MarketingDashboard()
+        dashboard.run_dashboard()
+        logger.info("✅ Dashboard application completed successfully")
+    except Exception as e:
+        logger.error(f"❌ Fatal error in main application: {e}", exc_info=True)
+        st.error(f"Fatal error: {e}")
 
 if __name__ == "__main__":
     main()
