@@ -89,6 +89,16 @@ except ImportError as e:
     logger.warning(f"⚠️ Command Center view not available. Import error: {e}")
     print("⚠️  Command Center view not available")
 
+# Import Strategic Plan view
+try:
+    from strategic_plan_view import render_strategic_plan_view
+    HAS_STRATEGIC_PLAN = True
+    logger.info("✅ Successfully imported Strategic Plan view")
+except ImportError as e:
+    HAS_STRATEGIC_PLAN = False
+    logger.warning(f"⚠️ Strategic Plan view not available. Import error: {e}")
+    print("⚠️  Strategic Plan view not available")
+
 # Page configuration
 st.set_page_config(
     page_title="Marketing Dashboard - A/B Test",
@@ -101,7 +111,7 @@ st.set_page_config(
 st.sidebar.title("📊 Marketing Dashboard")
 page = st.sidebar.selectbox(
     "Select Page",
-    ["Main Dashboard", "AI Command Center", "Diagnostics"]
+    ["Main Dashboard", "Strategic Plan", "AI Command Center", "Diagnostics"]
 )
 
 # Custom CSS for better styling
@@ -1112,6 +1122,11 @@ def main():
         # Route to appropriate page
         if page == "Main Dashboard":
             dashboard.run_dashboard()
+        elif page == "Strategic Plan":
+            if HAS_STRATEGIC_PLAN:
+                render_strategic_plan_view()
+            else:
+                st.error("Strategic Plan view is not available. Please check the import.")
         elif page == "AI Command Center":
             if HAS_COMMAND_CENTER:
                 # Get data from the dashboard's data sources
