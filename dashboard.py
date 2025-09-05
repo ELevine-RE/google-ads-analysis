@@ -203,13 +203,19 @@ class MarketingDashboard:
                 
                 # Calculate averages (scalar values)
                 def safe_last(data, default=0):
-                    if isinstance(data, list):
+                    if isinstance(data, (list, np.ndarray)):
                         return data[-1] if len(data) > 0 else default
                     return data if data is not None else default
                 
-                avg_ctr = safe_last(total_clicks) / safe_last(total_impressions) if safe_last(total_impressions) > 0 else 0
-                avg_cpc = safe_last(total_cost) / safe_last(total_clicks) if safe_last(total_clicks) > 0 else 0
-                avg_cpl = safe_last(total_cost) / safe_last(total_conversions) if safe_last(total_conversions) > 0 else 0
+                # Convert numpy arrays to scalars for safe comparison
+                last_clicks = float(safe_last(total_clicks))
+                last_impressions = float(safe_last(total_impressions))
+                last_cost = float(safe_last(total_cost))
+                last_conversions = float(safe_last(total_conversions))
+                
+                avg_ctr = last_clicks / last_impressions if last_impressions > 0 else 0
+                avg_cpc = last_cost / last_clicks if last_clicks > 0 else 0
+                avg_cpl = last_cost / last_conversions if last_conversions > 0 else 0
                 
                 cumulative_data = {
                     "total_impressions": total_impressions,
