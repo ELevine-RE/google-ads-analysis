@@ -1,6 +1,3 @@
-# Dashboard Dependencies
-# Generated for Streamlit Cloud deployment
-
 streamlit>=1.28.0
 pandas>=2.0.0
 plotly>=5.15.0
