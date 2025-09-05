@@ -99,6 +99,16 @@ except ImportError as e:
     logger.warning(f"⚠️ Strategic Plan view not available. Import error: {e}")
     print("⚠️  Strategic Plan view not available")
 
+# Import Marketing Plan & Timeline view
+try:
+    from marketing_plan_view import render_marketing_plan_view
+    HAS_MARKETING_PLAN = True
+    logger.info("✅ Successfully imported Marketing Plan & Timeline view")
+except ImportError as e:
+    HAS_MARKETING_PLAN = False
+    logger.warning(f"⚠️ Marketing Plan & Timeline view not available. Import error: {e}")
+    print("⚠️  Marketing Plan & Timeline view not available")
+
 # Page configuration
 st.set_page_config(
     page_title="Marketing Dashboard - A/B Test",
@@ -111,7 +121,7 @@ st.set_page_config(
 st.sidebar.title("📊 Marketing Dashboard")
 page = st.sidebar.selectbox(
     "Select Page",
-    ["Main Dashboard", "Strategic Plan", "AI Command Center", "Diagnostics"]
+    ["Main Dashboard", "Strategic Plan", "Marketing Plan & Timeline", "AI Command Center", "Diagnostics"]
 )
 
 # Custom CSS for better styling
@@ -1127,6 +1137,11 @@ def main():
                 render_strategic_plan_view()
             else:
                 st.error("Strategic Plan view is not available. Please check the import.")
+        elif page == "Marketing Plan & Timeline":
+            if HAS_MARKETING_PLAN:
+                render_marketing_plan_view()
+            else:
+                st.error("Marketing Plan & Timeline view is not available. Please check the import.")
         elif page == "AI Command Center":
             if HAS_COMMAND_CENTER:
                 # Get data from the dashboard's data sources
