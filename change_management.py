@@ -554,3 +554,4 @@ def track_current_week(analytics_data: dict, ads_data: dict, unified_metrics: di
     """Track current week's performance."""
     manager = ChangeManagement()
     return manager.add_weekly_snapshot(analytics_data, ads_data, unified_metrics)
+

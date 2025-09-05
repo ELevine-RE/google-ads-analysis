@@ -297,3 +297,4 @@ if __name__ == "__main__":
     test_phase_1_to_2_progression()
     console.print("\n" + "="*80 + "\n")
     demonstrate_lean_budget_scenarios()
+

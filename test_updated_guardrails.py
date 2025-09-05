@@ -291,3 +291,4 @@ if __name__ == "__main__":
     test_updated_guardrails()
     console.print("\n" + "="*80 + "\n")
     demonstrate_real_estate_impact()
+

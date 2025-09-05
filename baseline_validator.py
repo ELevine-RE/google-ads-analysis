@@ -453,3 +453,4 @@ def get_asset_requirements() -> Dict:
     """Get asset requirements."""
     validator = BaselineValidator()
     return validator.get_asset_requirements()
+
