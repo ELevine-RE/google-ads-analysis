@@ -129,7 +129,7 @@ class MarketingDashboard:
         if 'last_refresh' not in st.session_state:
             st.session_state.last_refresh = datetime.now()
     
-    def self.safe_get_last(self, data, key, default=0):
+    def safe_get_last(self, data, key, default=0):
         """Safely get the last element from a list or return the value if it's scalar."""
         value = data.get(key, default)
         if isinstance(value, list):
